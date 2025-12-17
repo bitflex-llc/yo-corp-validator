@@ -1,0 +1,29 @@
+[Unit]
+Description=YO Network Evmos Node
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=root
+WorkingDirectory=/root
+ExecStart=/usr/local/bin/evmosd start \
+  --home /root/.evmosd \
+  --json-rpc.enable \
+  --json-rpc.api eth,net,web3,txpool,debug \
+  --json-rpc.address 0.0.0.0:8545 \
+  --json-rpc.ws-address 0.0.0.0:8546 \
+  --api.enable \
+  --api.address tcp://0.0.0.0:1317 \
+  --grpc.enable \
+  --grpc.address 0.0.0.0:9090 \
+  --minimum-gas-prices 0aevmos \
+  --pruning=nothing
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=65535
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=evmosd
+
+[Install]
+WantedBy=multi-user.target

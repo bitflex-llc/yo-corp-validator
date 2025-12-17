@@ -1,0 +1,12 @@
+# Local artifacts
+.DS_Store
+*.log
+*.tar.gz
+/build
+/tmp
+
+# Keys / sensitive (should never be committed)
+**/keyring-*/
+**/priv_validator_key.json
+**/node_key.json
+**/validator-key.txt
