@@ -23,13 +23,13 @@ log_err() { printf "\033[1;31m[ERR]\033[0m %s\n" "$1"; }
 
 require_root() {
   if [[ $EUID -ne 0 ]]; then
-    log_err "Запусти скрипт от root (sudo -i)."
+    log_err "Run the script as root (sudo -i)."
     exit 1
   fi
 }
 
 install_packages() {
-  log "Устанавливаю зависимости..."
+  log "Installing dependencies..."
   apt-get update -qq
   apt-get install -y -qq curl wget jq lz4 tar systemd
 }
@@ -40,17 +40,17 @@ install_evmos() {
   installed_version="$(evmosd version 2>/dev/null || true)"
 
   if [[ "$installed_version" == "$target_version" ]]; then
-    log "evmosd ${installed_version} уже установлен."
+    log "evmosd ${installed_version} is already installed."
     return
   fi
 
-  log "Скачиваю evmosd ${EVMOS_VERSION}..."
+  log "Downloading evmosd ${EVMOS_VERSION}..."
   local arch_tag
   case "$(uname -m)" in
     x86_64|amd64) arch_tag="amd64" ;;
     arm64|aarch64) arch_tag="arm64" ;;
     *)
-      log_err "Неподдерживаемая архитектура: $(uname -m)"
+      log_err "Unsupported architecture: $(uname -m)"
       exit 1
       ;;
   esac
@@ -65,7 +65,7 @@ install_evmos() {
   local bin_path
   bin_path="$(find . -name evmosd -type f | head -1)"
   if [[ -z "$bin_path" ]]; then
-    log_err "Не удалось найти бинарник evmosd после распаковки."
+    log_err "Could not find the evmosd binary after extraction."
     exit 1
   fi
 
@@ -74,16 +74,16 @@ install_evmos() {
   popd >/dev/null
   rm -rf "$tmp_dir"
 
-  log_done "Установлен $(evmosd version)"
+  log_done "Installed $(evmosd version)"
 }
 
 init_home() {
   mkdir -p "$EVMOS_HOME"
   if [[ ! -d "$EVMOS_HOME/config" ]]; then
-    log "Инициализирую директорию $EVMOS_HOME..."
+    log "Initializing $EVMOS_HOME..."
     evmosd init "$MONIKER" --chain-id "$CHAIN_ID" --home "$EVMOS_HOME"
   else
-    log_warn "Каталог $EVMOS_HOME уже существует, пропускаю init."
+    log_warn "Directory $EVMOS_HOME already exists, skipping init."
   fi
 }
 
@@ -93,10 +93,10 @@ configure_files() {
   local config_toml="$EVMOS_HOME/config/config.toml"
   local app_toml="$EVMOS_HOME/config/app.toml"
 
-  log "Копирую genesis..."
+  log "Copying genesis..."
   cp "$script_dir/../config/genesis.json" "$EVMOS_HOME/config/genesis.json"
 
-  log "Обновляю config.toml..."
+  log "Updating config.toml..."
   sed -i.bak \
     -e "s/^moniker = .*/moniker = \"${MONIKER}\"/" \
     -e "s|^seeds = .*|seeds = \"${SEEDS}\"|" \
@@ -104,7 +104,7 @@ configure_files() {
     -e 's|^laddr = "tcp://127.0.0.1:26657"|laddr = "tcp://0.0.0.0:26657"|' \
     "$config_toml"
 
-  log "Обновляю app.toml..."
+  log "Updating app.toml..."
   sed -i.bak \
     -e "s/^minimum-gas-prices = .*/minimum-gas-prices = \"${MIN_GAS}\"/" \
     -e 's/^pruning *=.*/pruning = "nothing"/' \
@@ -112,7 +112,7 @@ configure_files() {
     -e 's/^pruning-interval *=.*/pruning-interval = "0"/' \
     "$app_toml"
 
-  # Включаем публичные API
+  # Enable public APIs
   sed -i '/\[api\]/,/^\[/ s/^enable = .*/enable = true/' "$app_toml"
   sed -i '/\[api\]/,/^\[/ s|^address = .*|address = "tcp://0.0.0.0:1317"|' "$app_toml"
 
@@ -127,7 +127,7 @@ configure_files() {
 }
 
 install_service() {
-  log "Создаю systemd сервис..."
+  log "Creating systemd service..."
   cat >/etc/systemd/system/evmosd.service <<EOF
 [Unit]
 Description=YO Network Evmos Node
@@ -165,7 +165,7 @@ EOF
 }
 
 start_service() {
-  log "Запускаю evmosd..."
+  log "Starting evmosd..."
   systemctl restart evmosd
   sleep 3
   systemctl status evmosd --no-pager -l | head -n 15
@@ -180,8 +180,8 @@ main() {
   install_service
   start_service
 
-  log_done "Нода запущена."
-  log "Проверяй статус: journalctl -u evmosd -f"
+  log_done "Node started."
+  log "Check status: journalctl -u evmosd -f"
   log "Tendermint RPC: http://$(hostname -I | awk '{print $1}'):26657"
   log "JSON-RPC:      http://$(hostname -I | awk '{print $1}'):8545"
 }

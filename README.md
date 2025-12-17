@@ -1,8 +1,8 @@
 # YO Network Validator Node
 
-Публичный репозиторий для быстрого развёртывания валидатора или публичной full-ноды сети YO (EVMOS). Скрипт разворачивает окружение на чистой Ubuntu 22.04, подтягивает genesis, настраивает конфиги и systemd сервис.
+Public repository for quickly deploying a validator or public full node for the YO (EVMOS) network. The script prepares a fresh Ubuntu 22.04 host, downloads the genesis file, configures node settings, and installs a systemd service.
 
-## Параметры сети
+## Network Parameters
 - Chain ID: `evmos_100892-1`
 - Denom: `aevmos` (YO, 18 dec)
 - RPC: `http://rpc.yonetwork.io:26657`
@@ -10,36 +10,36 @@
 - Explorer: https://explorer.yonetwork.io
 - Persistent peer: `c24d9aa369bf91e0e26c86d664b2c4fbc90d216f@rpc.yonetwork.io:26656`
 
-## Требования
-- Ubuntu 22.04 LTS, root доступ
-- CPU 4+ cores, RAM 8–16 GB, SSD 200+ GB (NVMe предпочтительнее)
-- Открытые порты: `26656` (p2p), `26657` (CometBFT RPC), `8545/8546` (JSON-RPC), `1317` (REST), `9090` (gRPC)
+## Requirements
+- Ubuntu 22.04 LTS with root access
+- CPU 4+ cores, RAM 8-16 GB, SSD 200+ GB (NVMe preferred)
+- Open ports: `26656` (p2p), `26657` (CometBFT RPC), `8545/8546` (JSON-RPC), `1317` (REST), `9090` (gRPC)
 
-## Быстрый старт
+## Quick Start
 ```bash
 apt update && apt install -y git
 git clone https://github.com/YO-Corp/validator.git
 cd validator
 
-# по желанию меняем монникер
+# optionally set a custom moniker
 MONIKER=my-node ./scripts/setup.sh
 ```
 
-Скрипт:
-- ставит зависимости и Evmos `v20.0.0` (переменная `EVMOS_VERSION`)
-- инициализирует `$EVMOS_HOME` (по умолчанию `/root/.evmosd`)
-- копирует `config/genesis.json`
-- прописывает persistent peer `rpc.yonetwork.io:26656`
-- включает JSON-RPC / REST / gRPC
-- создаёт и запускает `systemd` сервис `evmosd`
+The script:
+- installs dependencies and Evmos `v20.0.0` (configurable via `EVMOS_VERSION`)
+- initializes `$EVMOS_HOME` (defaults to `/root/.evmosd`)
+- copies `config/genesis.json`
+- sets persistent peer `rpc.yonetwork.io:26656`
+- enables JSON-RPC / REST / gRPC
+- creates and starts the `evmosd` systemd service
 
-## Управление сервисом
-- статус: `systemctl status evmosd`
-- логи: `journalctl -u evmosd -f`
-- рестарт: `systemctl restart evmosd`
-- остановка: `systemctl stop evmosd`
+## Service Management
+- status: `systemctl status evmosd`
+- logs: `journalctl -u evmosd -f`
+- restart: `systemctl restart evmosd`
+- stop: `systemctl stop evmosd`
 
-## Проверка
+## Verification
 ```bash
 curl -s localhost:26657/status | jq '.result.sync_info'
 curl -s localhost:8545 \
@@ -47,14 +47,13 @@ curl -s localhost:8545 \
   --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
 ```
 
-## Кастомизация
-- `MONIKER` — имя ноды
-- `EVMOS_HOME` — директория данных (по умолчанию `/root/.evmosd`)
-- `PERSISTENT_PEERS` — список пиров, можно расширять через переменную окружения
-- `MIN_GAS` — `minimum-gas-prices` (по умолчанию `0aevmos`)
+## Customization
+- `MONIKER` - node name
+- `EVMOS_HOME` - data directory (default `/root/.evmosd`)
+- `PERSISTENT_PEERS` - comma-separated peer list; extend via environment variable
+- `MIN_GAS` - `minimum-gas-prices` (default `0aevmos`)
 
-## Безопасность
-- Не коммитьте и не публикуйте `priv_validator_key.json`, `node_key.json` и файлы из `keyring-*`
-- Сделайте бэкап ключей валидатора и храните отдельно от сервера
-- Ограничьте доступ к RPC/JSON-RPC фаерволом или reverse-proxy, если не нужен публичный доступ
-
+## Security
+- Do not commit or publish `priv_validator_key.json`, `node_key.json`, or files from `keyring-*`
+- Back up validator keys and store them off the server
+- Restrict RPC/JSON-RPC with a firewall or reverse proxy if public access is not required
